@@ -1,0 +1,7 @@
+# Python
+venv/
+__pycache__/
+
+# Personal files
+plan.txt
+PROJECT_ROADMAP.md
