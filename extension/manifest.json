@@ -1,0 +1,10 @@
+{
+    "manifest_version": 3,
+    "name": "FactChecker",
+    "version": "0.0.1",
+    "description": "Fact-check informations on the web",
+    "permissions": ["activeTab", "scripting"],
+    "action": {
+        "default_popup": "popup.html"
+    }
+}
