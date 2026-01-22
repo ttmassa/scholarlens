@@ -1,1 +1,4 @@
 fastapi[standard-no-fastapi-cloud-cli] === 0.128.0
+nltk === 3.9.2
+pandas === 3.0.0
+scikit-learn === 1.8.0
