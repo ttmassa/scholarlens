@@ -58,20 +58,20 @@ if __name__ == "__main__":
     print("DATASET STATISTICS")
     print("=" * 60)
     
-    print("\n📊 BASIC INFO:")
+    print("\nBASIC INFO:")
     print(f"  Total sentences: {stats['total_sentences']:,}")
     
-    print("\n⚖️  CLASS DISTRIBUTION:")
+    print("\nCLASS DISTRIBUTION:")
     print(f"  Claims: {stats['num_claims']:,} ({stats['num_claims'] / stats['total_sentences'] * 100:.2f}%)")
     print(f"  Non-claims: {stats['num_non_claims']:,} ({stats['num_non_claims'] / stats['total_sentences'] * 100:.2f}%)")
     
-    print("\n📏 LENGTH STATISTICS:")
+    print("\nLENGTH STATISTICS:")
     print(f"  Mean: {stats['length_mean']:.2f}")
     print(f"  Median: {stats['length_median']:.2f}")
     print(f"  Std Dev: {stats['length_std']:.2f}")
     print(f"  Range: {stats['length_min']} - {stats['length_max']}")
     
-    print("\n📝 TEXT CHARACTERISTICS:")
+    print("\nTEXT CHARACTERISTICS:")
     print(f"  Vocabulary size: {stats['vocabulary_size']:,} unique words")
     print(f"  Avg words per sentence: {stats['avg_words_per_sentence']:.2f}")
     
