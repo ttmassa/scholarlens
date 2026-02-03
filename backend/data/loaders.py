@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-def load_claimbuster_data(file_path: str = 'backend/data/raw/crowdsourced.csv'):
+def load_claimbuster_data(file_path: str = 'data/raw/crowdsourced.csv'):
     # Load the CSV file into a pandas DataFrame
     df = pd.read_csv(file_path)
 
