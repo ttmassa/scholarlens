@@ -20,14 +20,11 @@ class BaselineClaimDetector:
         predictions = self.predict(texts)
 
         # Compare with true labels
-        precision = precision_score(labels, predictions)
-        recall = recall_score(labels, predictions)
-        f1 = f1_score(labels, predictions)
+        precision = precision_score(labels, predictions, average='weighted', zero_division=0)
+        recall = recall_score(labels, predictions, average='weighted', zero_division=0)
+        f1 = f1_score(labels, predictions, average='weighted', zero_division=0)
         accuracy = accuracy_score(labels, predictions)
         cm = confusion_matrix(labels, predictions)
-
-        # Compute confusion matrix
-        print(f"Confusion Matrix: {cm}")
 
         return {
             "precision": precision,
@@ -39,22 +36,23 @@ class BaselineClaimDetector:
     
 if __name__ == "__main__":
     # Example usage
-    texts = [
-        "This is a claim about something important.",
-        "This is just a regular statement.",
-        "Another claim that needs verification.",
-        "Just some random text without claims."
-    ]
-    labels = [1, 0, 1, 0]  # 1 for claim, 0 for non-claim
+    from data.loaders import load_claimbuster_data, split_train_test
 
+    # Start by loading data from dataset
+    pandas_df = load_claimbuster_data()
+    x_train, y_test = split_train_test(pandas_df)
+
+    # Prepare training and testing data
+    train_texts = x_train["Text"]
+    train_labels = x_train["Verdict"]
+    test_texts = y_test["Text"]
+    test_labels = y_test["Verdict"]
+
+    # Initialize and train the model
     model = BaselineClaimDetector()
-    model.train(texts, labels)
+    model.train(train_texts, train_labels)
 
-    test_texts = [
-        "This statement is definitely a claim.",
-        "Nothing special about this text."
-    ]
-    test_labels = [1, 0]
-
+    # Evaluate the model
     results = model.evaluate(test_texts, test_labels)
-    print(results)
+    for metric, value in results.items():
+        print(f"{metric}: {value}")
