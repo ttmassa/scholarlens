@@ -37,6 +37,8 @@ class BaselineClaimDetector:
 if __name__ == "__main__":
     # Example usage
     from data.loaders import load_claimbuster_data, split_train_test
+    import numpy as np
+    from sklearn.metrics import classification_report
 
     # Start by loading data from dataset
     pandas_df = load_claimbuster_data()
@@ -54,5 +56,45 @@ if __name__ == "__main__":
 
     # Evaluate the model
     results = model.evaluate(test_texts, test_labels)
-    for metric, value in results.items():
-        print(f"{metric}: {value}")
+    
+    # Display overall metrics
+    print("=" * 60)
+    print("BASELINE MODEL EVALUATION RESULTS")
+    print("=" * 60)
+    print(f"\nOverall Metrics:")
+    print(f"  Accuracy:  {results['accuracy']:.4f} ({results['accuracy']*100:.2f}%)")
+    print(f"  Precision: {results['precision']:.4f} ({results['precision']*100:.2f}%)")
+    print(f"  Recall:    {results['recall']:.4f} ({results['recall']*100:.2f}%)")
+    print(f"  F1-Score:  {results['f1_score']:.4f} ({results['f1_score']*100:.2f}%)")
+    
+    # Confusion matrix analysis
+    cm = results['confusion_matrix']
+    print(f"\nConfusion Matrix:")
+    print(cm)
+    
+    # Per-class metrics
+    print(f"\nPer-Class Analysis:")
+    predictions = model.predict(test_texts)
+    
+    for class_idx in range(len(np.unique(test_labels))):
+        # True positives, false positives, false negatives
+        tp = cm[class_idx, class_idx]
+        fn = np.sum(cm[class_idx, :]) - tp
+        fp = np.sum(cm[:, class_idx]) - tp
+        
+        class_accuracy = tp / (tp + fn) if (tp + fn) > 0 else 0
+        class_precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        class_recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+        
+        print(f"\n  Class {class_idx}:")
+        print(f"    Instances:  {tp + fn}")
+        print(f"    Recall:     {class_recall:.4f} ({class_recall*100:.2f}%)")
+        print(f"    Precision:  {class_precision:.4f} ({class_precision*100:.2f}%)")
+        print(f"    Accuracy:   {class_accuracy:.4f} ({class_accuracy*100:.2f}%)")
+    
+    # Detailed classification report
+    print(f"\nDetailed Classification Report:")
+    class_labels = sorted(np.unique(test_labels))
+    print(classification_report(test_labels, predictions, labels=class_labels, zero_division=0))
+        
+    print("\n" + "=" * 60)
