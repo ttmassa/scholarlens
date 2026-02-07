@@ -9,3 +9,6 @@ PROJECT_ROADMAP.md
 
 # Environment files
 .env
+
+# Models
+*.joblib
