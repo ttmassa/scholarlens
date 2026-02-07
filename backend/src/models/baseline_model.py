@@ -36,7 +36,7 @@ class BaselineClaimDetector:
     
 if __name__ == "__main__":
     # Example usage
-    from data.loaders import load_claimbuster_data, split_train_test
+    from src.data.loaders import load_claimbuster_data, split_train_test
     import numpy as np
     from sklearn.metrics import classification_report
 
@@ -51,6 +51,7 @@ if __name__ == "__main__":
     test_labels = y_test["Verdict"]
 
     # Initialize and train the model
+    print("Training model... Can take some time!")
     model = BaselineClaimDetector()
     model.train(train_texts, train_labels)
 
