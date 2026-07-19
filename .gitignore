@@ -1,14 +1,1 @@
-# Python
-.venv/
-venv/
-__pycache__/
-
-# Personal files
-plan.txt
-PROJECT_ROADMAP.md
-
-# Environment files
-.env
-
-# Models
-*.joblib
+node_modules
