@@ -1,7 +1,20 @@
-import { CircleCheck, Search, Settings } from "lucide-react";
+import React from 'react';
+import { 
+    CircleCheck, 
+    Search, 
+    Settings, 
+    Flag, 
+    Share, 
+    BookmarkPlus, 
+    FileText, 
+    Quote, 
+    BookOpen, 
+    ExternalLink, 
+    Calendar, 
+} from "lucide-react";
 import './ResultsPanel.css';
 
-// Start by defining the types for the fact-checking results
+// Types and Enums
 export enum FactCheckStatus {
     Loading = 'loading',
     Success = 'success',
@@ -15,7 +28,6 @@ export enum FactCheckVerdict {
     Unverified = 'UNVERIFIED',
 }
 
-// Define the structure of the fact-checking result
 export interface FactCheckResult {
     status: FactCheckStatus;
     verdict?: FactCheckVerdict;
@@ -25,31 +37,116 @@ export interface FactCheckResult {
 }
 
 interface ResultsPanelProps {
-    selectedText: string,
+    selectedText: string;
     result: FactCheckResult;
 }
 
 export const ResultsPanel: React.FC<ResultsPanelProps> = ({ selectedText, result }) => {
+    // Helper to determine verdict styling
+    const isErrorVerdict = result.verdict === FactCheckVerdict.False || result.verdict === FactCheckVerdict.Misleading;
+
     return (
         <div className="panel-container">
+            {/* TopAppBar */}
             <header className="panel-header">
-                <h2 className="panel-title">ScholarLens</h2>
-                <div className="header-end">
-                    <button className="header-btn search-btn">
-                        <Search />
+                <div className="panel-title">ScholarLens</div>
+                <div className="header-actions">
+                    <button className="icon-btn" aria-label="Search">
+                        <Search size={20} />
                     </button>
-                    <button className="header-btn settings-btn">
-                        <Settings />
+                    <button className="icon-btn" aria-label="Settings">
+                        <Settings size={20} />
                     </button>
                 </div>
             </header>
-            
+
+            {/* Main Canvas */}
             <main className="panel-main">
-                <div className="factcheck-status">
-                    <CircleCheck className={`status-icon ${result.status}`} size={18}/>
-                    <span className="status-text">{result.status.toUpperCase()}</span>
+                {/* Status Indicator */}
+                <div className="status-indicator">
+                    <CircleCheck size={16} className="status-icon" />
+                    <span className="status-label">Check Complete</span>
+                </div>
+
+                <div className="results-stack">
+                    {/* Primary Verdict Card */}
+                    <div className={`glass-panel verdict-card ${isErrorVerdict ? 'verdict-card-error' : 'verdict-card-success'}`}>
+                        <div className={`verdict-glow ${isErrorVerdict ? 'glow-error' : 'glow-success'}`}></div>
+                        <div className="verdict-content">
+                            <div className="verdict-header">
+                                <h2 className="verdict-title">{result.verdict || 'UNVERIFIED'}</h2>
+                                {result.score !== undefined && (
+                                    <div className="score-badge">
+                                        <span className="score-label">Score</span>
+                                        <span className="score-value">{result.score}%</span>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="claim-section">
+                                <h3 className="claim-label">Analyzed Claim</h3>
+                                <p className="claim-text">"{selectedText}"</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Context / Quick Action Panel */}
+                    <div className="glass-panel context-panel">
+                        <h3 className="panel-heading">AI Analysis</h3>
+                        <p className="analysis-text">
+                            {result.explanation || "No explanation provided."}
+                        </p>
+                        <div className="action-row-divider">
+                            <button className="action-btn">
+                                <Flag size={14} /> Report
+                            </button>
+                            <button className="action-btn">
+                                <Share size={14} /> Share
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Research Action Buttons */}
+                    <div className="research-actions">
+                        <button className="research-btn">
+                            <BookmarkPlus size={14} /> Save
+                        </button>
+                        <button className="research-btn">
+                            <FileText size={14} /> Export
+                        </button>
+                        <button className="research-btn">
+                            <Quote size={14} /> Cite
+                        </button>
+                    </div>
+
+                    {/* Verified Sources Section */}
+                    {result.sources && result.sources.length > 0 && (
+                        <div className="sources-section">
+                            <div className="sources-header">
+                                <BookOpen size={16} className="sources-icon" />
+                                <h3 className="panel-heading">Verified Sources</h3>
+                            </div>
+                            
+                            <div className="sources-list">
+                                {result.sources.map((sourceUrl, index) => (
+                                    <div key={index} className="glass-panel source-card group">
+                                        <div className="source-card-header">
+                                            <span className="source-tag">Source {index + 1}</span>
+                                            <a href={sourceUrl} target="_blank" rel="noreferrer" className="source-link">
+                                                <ExternalLink size={14} />
+                                            </a>
+                                        </div>
+                                        <h4 className="source-title">{new URL(sourceUrl).hostname}</h4>
+                                        <p className="source-desc">{sourceUrl}</p>
+                                        <div className="source-meta">
+                                            <span className="meta-item"><Calendar size={11} /> 2026</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </main>
         </div>
-    )
-}
+    );
+};
