@@ -1,16 +1,23 @@
+import ReactDOM from 'react-dom/client'
+import { HoverButton } from '@/components/HoverButton/HoverButton';
 import './style.css';
 
 export default defineContentScript({
   matches: ['<all_urls>'],
   cssInjectionMode: 'manifest',
   main() {
-    let button: HTMLButtonElement | null = null;
+    let container: HTMLDivElement | null = null;
+    let root: ReturnType<typeof ReactDOM.createRoot> | null = null;
 
     const removeButton = () => {
-      button?.remove();
-      button = null;
+      // Unmount React component
+      root?.unmount();
+      root = null;
+      // Remove the container from the DOM
+      container?.remove();
+      container = null;
     };
-
+    
     const handleSelection = () => {
       const selection = window.getSelection();
       const text = selection?.toString().trim();
@@ -20,33 +27,38 @@ export default defineContentScript({
         return;
       }
 
+      const handleClick = () => {
+        console.log('[ContentScript] Sending text:', text);
+        browser.runtime.sendMessage({ type: 'CHECK_TEXT', payload: text });
+        removeButton();
+      }
+
       const range = selection!.getRangeAt(0);
       // Get all bounding rectangles across wrapped lines
       const rects = range.getClientRects();
       // Fallback to boundingClientRect if getClientRects is empty
       const targetRect = rects.length > 0 ? rects[0] : range.getBoundingClientRect();
 
-      if (!button) {
-        button = document.createElement('button');
-        button.className = 'factcheck-btn';
-        button.innerText = 'Fact Check';
+      if (!container) {
+        // Create a new container for the React component
+        container = document.createElement('div');
+        container.style.position = 'absolute';
+        container.style.zIndex = '9999';
+        document.body.appendChild(container);
 
-        button.addEventListener('click', (e) => {
-          e.stopPropagation();
-          console.log('[ContentScript] Sending text:', text);
-
-          browser.runtime.sendMessage({ type: 'CHECK_TEXT', payload: text });
-          removeButton();
-        });
-
-        document.body.appendChild(button);
+        // Render the React component into the container
+        root = ReactDOM.createRoot(container);
+        root.render(
+          <HoverButton onClick={handleClick}/>
+        )
       }
 
-      // Position precisely above the start of the first highlighted line
-      button.style.top = `${Math.max(0, targetRect.top + window.scrollY - 36)}px`;
-      button.style.left = `${targetRect.left + window.scrollX}px`;
+      // Position above the start of the first highlighted line
+      container.style.top = `${Math.max(0, targetRect.top + window.scrollY - 36)}px`;
+      container.style.left = `${targetRect.left + window.scrollX}px`;
     };
 
+    // Event listeners to handle text selection and button removal
     document.addEventListener('mouseup', () => {
       handleSelection();
     });
