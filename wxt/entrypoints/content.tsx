@@ -1,24 +1,38 @@
 import ReactDOM from 'react-dom/client'
 import { HoverButton } from '@/components/HoverButton/HoverButton';
-import './style.css';
+import { ResultsPanel, FactCheckStatus, FactCheckVerdict, FactCheckResult } from '@/components/ResultsPanel/ResultsPanel';
 
 export default defineContentScript({
   matches: ['<all_urls>'],
   cssInjectionMode: 'manifest',
   main() {
-    let container: HTMLDivElement | null = null;
-    let root: ReturnType<typeof ReactDOM.createRoot> | null = null;
+    // Button
+    let buttonContainer: HTMLDivElement | null = null;
+    let buttonRoot: ReturnType<typeof ReactDOM.createRoot> | null = null;
+
+    // Panel
+    let resultsPanelContainer: HTMLDivElement | null = null;
+    let resultsPanelRoot: ReturnType<typeof ReactDOM.createRoot> | null = null;
 
     const removeButton = () => {
       // Unmount React component
-      root?.unmount();
-      root = null;
+      buttonRoot?.unmount();
+      buttonRoot = null;
       // Remove the container from the DOM
-      container?.remove();
-      container = null;
+      buttonContainer?.remove();
+      buttonContainer = null;
     };
+
+    const removePanel = () => {
+      // Unmount React component
+      resultsPanelRoot?.unmount();
+      resultsPanelRoot = null;
+      // Remove the container from the DOM
+      resultsPanelContainer?.remove();
+      resultsPanelContainer = null;
+    }
     
-    const handleSelection = () => {
+    const renderButton = () => {
       const selection = window.getSelection();
       const text = selection?.toString().trim();
 
@@ -28,9 +42,11 @@ export default defineContentScript({
       }
 
       const handleClick = () => {
-        console.log('[ContentScript] Sending text:', text);
-        browser.runtime.sendMessage({ type: 'CHECK_TEXT', payload: text });
         removeButton();
+        renderPanel(text)
+        // console.log('[ContentScript] Sending text:', text);
+        // browser.runtime.sendMessage({ type: 'CHECK_TEXT', payload: text });
+        // removeButton();
       }
 
       const range = selection!.getRangeAt(0);
@@ -39,33 +55,60 @@ export default defineContentScript({
       // Fallback to boundingClientRect if getClientRects is empty
       const targetRect = rects.length > 0 ? rects[0] : range.getBoundingClientRect();
 
-      if (!container) {
+      if (!buttonContainer) {
         // Create a new container for the React component
-        container = document.createElement('div');
-        container.style.position = 'absolute';
-        container.style.zIndex = '9999';
-        document.body.appendChild(container);
+        buttonContainer = document.createElement('div');
+        buttonContainer.style.position = 'absolute';
+        buttonContainer.style.zIndex = '9999';
+        document.body.appendChild(buttonContainer);
 
         // Render the React component into the container
-        root = ReactDOM.createRoot(container);
-        root.render(
+        buttonRoot = ReactDOM.createRoot(buttonContainer);
+        buttonRoot.render(
           <HoverButton onClick={handleClick}/>
         )
       }
 
       // Position above the start of the first highlighted line
-      container.style.top = `${Math.max(0, targetRect.top + window.scrollY - 36)}px`;
-      container.style.left = `${targetRect.left + window.scrollX}px`;
+      buttonContainer.style.top = `${Math.max(0, targetRect.top + window.scrollY - 36)}px`;
+      buttonContainer.style.left = `${targetRect.left + window.scrollX}px`;
     };
+
+    const renderPanel = (selectedText: string) => {
+      if (!resultsPanelContainer) {
+        // Create a container for the React component
+        resultsPanelContainer = document.createElement('div');
+        resultsPanelContainer.style.position = 'fixed';
+        resultsPanelContainer.style.top = '20px';
+        resultsPanelContainer.style.right = '20px';
+        resultsPanelContainer.style.zIndex = '99999';
+        document.body.appendChild(resultsPanelContainer);
+
+        // Render the React component into the container
+        resultsPanelRoot = ReactDOM.createRoot(resultsPanelContainer);
+        // Render mock data for now
+        let mockResult: FactCheckResult = {
+          status: FactCheckStatus.Success,
+          verdict: FactCheckVerdict.Misleading,
+          score: 100,
+          explanation: "This statement is misleading because it omits important context.",
+          sources: ["https://example.com/source1", "https://example.com/source2"]
+        }
+
+        resultsPanelRoot.render(
+          <ResultsPanel selectedText={selectedText} result={mockResult}/>
+        )
+      }
+    }
 
     // Event listeners to handle text selection and button removal
     document.addEventListener('mouseup', () => {
-      handleSelection();
+      renderButton();
     });
 
     document.addEventListener('keyup', (e) => {
       if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt') {
-        handleSelection();
+        renderButton();
       }
     });
 
