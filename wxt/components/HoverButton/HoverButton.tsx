@@ -4,7 +4,7 @@ interface HoverButtonProps {
     onClick: () => void;
 }
 
-export const HoverButton: React.FC<HoverButtonProps> = ({ onClick }) => {
+export const HoverButton = ({ onClick }: HoverButtonProps) => {
     return (
         <button className="factcheck-btn" onClick={onClick}>
             Fact-check
