@@ -1,16 +1,17 @@
 import React from 'react';
 import { 
-    CircleCheck, 
-    Search, 
-    Settings, 
-    Flag, 
-    Share, 
-    BookmarkPlus, 
-    FileText, 
-    Quote, 
-    BookOpen, 
-    ExternalLink, 
-    Calendar, 
+    CircleCheck,
+    CircleX,
+    Search,
+    Settings,
+    Share,
+    BookmarkPlus,
+    FileText,
+    Quote,
+    BookOpen,
+    ExternalLink,
+    Calendar,
+    X
 } from "lucide-react";
 import './ResultsPanel.css';
 
@@ -39,15 +40,17 @@ export interface FactCheckResult {
 interface ResultsPanelProps {
     selectedText: string;
     result: FactCheckResult;
+    onClose: () => void;
 }
 
-export const ResultsPanel: React.FC<ResultsPanelProps> = ({ selectedText, result }) => {
+export const ResultsPanel = ({ selectedText, result, onClose }: ResultsPanelProps) => {
     // Helper to determine verdict styling
     const isErrorVerdict = result.verdict === FactCheckVerdict.False || result.verdict === FactCheckVerdict.Misleading;
+    const isSuccessStatus = result.status === FactCheckStatus.Success;
 
     return (
         <div className="panel-container">
-            {/* TopAppBar */}
+            {/* Header */}
             <header className="panel-header">
                 <div className="panel-title">ScholarLens</div>
                 <div className="header-actions">
@@ -57,6 +60,9 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({ selectedText, result
                     <button className="icon-btn" aria-label="Settings">
                         <Settings size={20} />
                     </button>
+                    <button className="icon-btn" aria-label="Close" onClick={onClose}>
+                        <X size={20} />
+                    </button>
                 </div>
             </header>
 
@@ -64,8 +70,12 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({ selectedText, result
             <main className="panel-main">
                 {/* Status Indicator */}
                 <div className="status-indicator">
-                    <CircleCheck size={16} className="status-icon" />
-                    <span className="status-label">Check Complete</span>
+                    {
+                        isSuccessStatus ? 
+                        <CircleCheck size={16} className="status-icon" /> :
+                        <CircleX size={16} className="status-icon" />
+                    }
+                    <span className="status-label">{isSuccessStatus ? "Check Complete" : "Error"}</span>
                 </div>
 
                 <div className="results-stack">
@@ -96,9 +106,6 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({ selectedText, result
                             {result.explanation || "No explanation provided."}
                         </p>
                         <div className="action-row-divider">
-                            <button className="action-btn">
-                                <Flag size={14} /> Report
-                            </button>
                             <button className="action-btn">
                                 <Share size={14} /> Share
                             </button>

@@ -43,7 +43,8 @@ export default defineContentScript({
 
       const handleClick = () => {
         removeButton();
-        renderPanel(text)
+        removePanel();
+        renderPanel(text);
         // console.log('[ContentScript] Sending text:', text);
         // browser.runtime.sendMessage({ type: 'CHECK_TEXT', payload: text });
         // removeButton();
@@ -96,7 +97,7 @@ export default defineContentScript({
         }
 
         resultsPanelRoot.render(
-          <ResultsPanel selectedText={selectedText} result={mockResult}/>
+          <ResultsPanel selectedText={selectedText} result={mockResult} onClose={removePanel}/>
         )
       }
     }
@@ -121,6 +122,7 @@ export default defineContentScript({
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         removeButton();
+        removePanel();
       }
     });
 
