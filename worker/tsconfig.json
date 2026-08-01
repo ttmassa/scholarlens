@@ -39,7 +39,16 @@
 		"types": [
 			"./worker-configuration.d.ts",
 			"node"
-		]
+		],
+
+		/* Report errors in .js files. */
+		"noEmitOnError": true,
+
+		/* Report an error when not all code paths in function return a value. */
+		"noImplicitReturns": true,
+
+		/* Report errors on unused locals. */
+		"noUnusedLocals": true
 	},
 	"exclude": ["test"],
 	"include": ["worker-configuration.d.ts", "src/**/*.ts"]
