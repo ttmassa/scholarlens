@@ -1,3 +1,5 @@
+import { FactCheckStatus, FactCheckVerdict, FactCheckResult } from '../../wxt/components/ResultsPanel/ResultsPanel';
+
 export interface Env {
 	AI_API_KEY?: string;
 }
@@ -45,11 +47,11 @@ export default {
 				});
 			}
 
-			const factCheckResult = {
-				status: "SUCCESS",
-				verdict: "MISLEADING",
+			const factCheckResult: FactCheckResult = {
+				status: FactCheckStatus.Success,
+				verdict: FactCheckVerdict.Misleading,
 				score: 100,
-				explaination: "The claim is misleading because it lacks context and omits critical information that changes its meaning.",
+				explanation: "The claim is misleading because it lacks context and omits critical information that changes its meaning.",
 				sources: [
 					"https://en.wikipedia.org/wiki/Main_Page",
 					"https://www.nature.com"
