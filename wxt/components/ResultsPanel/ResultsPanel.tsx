@@ -1,4 +1,3 @@
-import React from 'react';
 import { 
     CircleCheck,
     CircleX,
@@ -17,9 +16,9 @@ import './ResultsPanel.css';
 
 // Types and Enums
 export enum FactCheckStatus {
-    Loading = 'loading',
-    Success = 'success',
-    Error = 'error',
+    Loading = 'LOADING',
+    Success = 'SUCCESS',
+    Error = 'ERROR',
 }
 
 export enum FactCheckVerdict {
