@@ -1,7 +1,7 @@
 export default defineBackground(() => {
   console.log('[Background] Service Worker started.');
 
-  const WORKER_URL = "https://localhost:8787/api/check";
+  const WORKER_URL = "http://localhost:8787/api/check";
 
   // Listen for messages from content scripts
   browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
