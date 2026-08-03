@@ -83,7 +83,7 @@ export const ResultsPanel = ({ selectedText, result, onClose }: ResultsPanelProp
                         <div className={`verdict-glow ${isErrorVerdict ? 'glow-error' : 'glow-success'}`}></div>
                         <div className="verdict-content">
                             <div className="verdict-header">
-                                <h2 className="verdict-title">{result.verdict || 'UNVERIFIED'}</h2>
+                                <h2 className="verdict-title">{result.verdict || 'LOADING'}</h2>
                                 {result.score !== undefined && (
                                     <div className="score-badge">
                                         <span className="score-label">Score</span>

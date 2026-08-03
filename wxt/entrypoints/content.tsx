@@ -1,6 +1,6 @@
 import ReactDOM from 'react-dom/client'
 import { HoverButton } from '@/components/HoverButton/HoverButton';
-import { ResultsPanel, FactCheckStatus, FactCheckVerdict, FactCheckResult } from '@/components/ResultsPanel/ResultsPanel';
+import { ResultsPanel, FactCheckStatus, FactCheckResult } from '@/components/ResultsPanel/ResultsPanel';
 
 export default defineContentScript({
   matches: ['<all_urls>'],
@@ -44,10 +44,28 @@ export default defineContentScript({
       const handleClick = () => {
         removeButton();
         removePanel();
+
+        // Render the results panel in loading state
         renderPanel(text);
-        // console.log('[ContentScript] Sending text:', text);
-        // browser.runtime.sendMessage({ type: 'CHECK_TEXT', payload: text });
-        // removeButton();
+        
+        // Send the selected text to the background script for fact-checking
+        browser.runtime.sendMessage({ type: 'CHECK_TEXT', payload: text })
+          .then((response) => {
+            if (response.success) {
+              renderPanel(text, response.result);
+            } else {
+              renderPanel(text, {
+                status: FactCheckStatus.Error,
+                explanation: response.error || "An error occurred while checking the claim."
+              });
+            }
+          })
+          .catch((error) => {
+            renderPanel(text, {
+              status: FactCheckStatus.Error,
+              explanation: error.toString() || "An error occurred while communicating with the extension."
+            })
+          })
       }
 
       const range = selection!.getRangeAt(0);
@@ -75,7 +93,7 @@ export default defineContentScript({
       buttonContainer.style.left = `${targetRect.left + window.scrollX}px`;
     };
 
-    const renderPanel = (selectedText: string) => {
+    const renderPanel = (selectedText: string, result?: FactCheckResult) => {
       if (!resultsPanelContainer) {
         // Create a container for the React component
         resultsPanelContainer = document.createElement('div');
@@ -87,20 +105,18 @@ export default defineContentScript({
 
         // Render the React component into the container
         resultsPanelRoot = ReactDOM.createRoot(resultsPanelContainer);
-        // Render mock data for now
-        let mockResult: FactCheckResult = {
-          status: FactCheckStatus.Success,
-          verdict: FactCheckVerdict.Misleading,
-          score: 100,
-          explanation: "This statement is misleading because it omits important context.",
-          sources: ["https://example.com/source1", "https://example.com/source2"]
-        }
-
-        resultsPanelRoot.render(
-          <ResultsPanel selectedText={selectedText} result={mockResult} onClose={removePanel}/>
-        )
       }
-    }
+
+      // Default to loading state if no result is provided
+      const resultToRender: FactCheckResult = result || {
+        status: FactCheckStatus.Loading,
+        explanation: "Analyzing claim..."
+      };
+
+      resultsPanelRoot?.render(
+        <ResultsPanel selectedText={selectedText} result={resultToRender} onClose={removePanel} />
+      );
+    };
 
     // Event listeners to handle text selection and button removal
     document.addEventListener('mouseup', () => {
