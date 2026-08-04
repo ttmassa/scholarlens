@@ -32,7 +32,7 @@ export enum FactCheckVerdict {
 export interface Source {
     title: string;
     url: string;
-    snippet: string;
+    description: string;
 }
 
 export interface FactCheckResult {
@@ -97,7 +97,7 @@ export const ResultsPanel = ({ selectedText, result, onClose }: ResultsPanelProp
                         <div className={"verdict-glow"}></div>
                         <div className="verdict-content">
                             <div className="verdict-header">
-                                <h2 className="verdict-title">{result.verdict || 'ERROR'}</h2>
+                                <h2 className="verdict-title">{(result.verdict || (result.status === FactCheckStatus.Loading && "LOADING")) || "ERROR"}</h2>
                                 {result.score !== undefined && (
                                     <div className="score-badge">
                                         <span className="score-label">Score</span>
@@ -150,13 +150,13 @@ export const ResultsPanel = ({ selectedText, result, onClose }: ResultsPanelProp
                                 {result.sources.map((source, index) => (
                                     <div key={index} className="glass-panel source-card group">
                                         <div className="source-card-header">
-                                            <span className="source-tag">Source {index + 1}</span>
+                                            <span className="source-tag">{source.url}</span>
                                             <a href={source.url} target="_blank" rel="noreferrer" className="source-link">
                                                 <ExternalLink size={14} />
                                             </a>
                                         </div>
                                         <h4 className="source-title">{source.title}</h4>
-                                        <p className="source-desc">{source.snippet}</p>
+                                        <p className="source-desc">{source.description}</p>
                                         <div className="source-meta">
                                             <span className="meta-item"><Calendar size={11} /> 2026</span>
                                         </div>

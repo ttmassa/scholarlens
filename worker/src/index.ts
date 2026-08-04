@@ -1,13 +1,34 @@
-import { FactCheckStatus, FactCheckVerdict, FactCheckResult } from '../../wxt/components/ResultsPanel/ResultsPanel';
+import { FactCheckStatus, FactCheckVerdict, FactCheckResult, Source } from '../../wxt/components/ResultsPanel/ResultsPanel';
 
 export interface Env {
 	BRAVE_API_KEY?: string;
+}
+
+interface BraveResultItem {
+	title: string;
+	url: string;
+	description: string;
+}
+
+interface BraveSearchResponse {
+	web?: {
+		results?: BraveResultItem[];
+	}
 }
 
 const CORS_HEADERS = {
 	"Access-Control-Allow-Origin": "*",
 	"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 	"Access-Control-Allow-Headers": "Content-Type, Authorization",
+}
+
+function filterText(text: string): string {
+	return text
+		.replace(/<[^>]*>/g, '')
+		.replace(/&#x27;/g, "'")
+		.replace(/&quot;/g, '"')
+		.replace(/&amp;/g, '&')
+		.trim();
 }
 
 export default {
@@ -47,15 +68,35 @@ export default {
 				});
 			}
 
+			// Search the claim using Brave Search API
+			const braveSearchUrl = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(claim)}&count=5`;
+
+			const braveResponse = await fetch(braveSearchUrl, {
+				headers: {
+					"Accept": "application/json",
+					"Accept-Encoding": "gzip",
+					"X-Subscription-Token": env.BRAVE_API_KEY || "",
+				},
+			});
+
+			if (!braveResponse.ok) {
+				throw new Error(`Brave Search API error: ${braveResponse.statusText}`);
+			}
+
+			const braveData: BraveSearchResponse = await braveResponse.json();
+
+			const mappedSources: Source[] = (braveData.web?.results || []).map(result => ({
+				title: filterText(result.title),
+				url: result.url,
+				description: filterText(result.description),
+			}));
+
 			const factCheckResult: FactCheckResult = {
 				status: FactCheckStatus.Success,
 				verdict: FactCheckVerdict.Misleading,
 				score: 100,
-				explanation: "The claim is misleading because it lacks context and omits critical information that changes its meaning.",
-				sources: [
-					"https://en.wikipedia.org/wiki/Main_Page",
-					"https://www.nature.com"
-				]
+				explanation: `Retrieved ${braveData.web?.results?.length || 0} sources from Brave Search.`,
+				sources: mappedSources,
 			}
 
 			return new Response(JSON.stringify(factCheckResult), {

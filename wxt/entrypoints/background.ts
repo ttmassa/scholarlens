@@ -18,6 +18,7 @@ export default defineBackground(() => {
         },
         body: JSON.stringify({ text: claimText }),
       })
+      // Handle the response from the worker
       .then(response => response.json())
       .then(data => {
         console.log('[Background] Received fact-check result from worker:', data);
