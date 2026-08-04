@@ -29,12 +29,18 @@ export enum FactCheckVerdict {
     Unverified = 'UNVERIFIED',
 }
 
+export interface Source {
+    title: string;
+    url: string;
+    snippet: string;
+}
+
 export interface FactCheckResult {
     status: FactCheckStatus;
     verdict?: FactCheckVerdict;
     score?: number;
     explanation?: string;
-    sources?: string[];
+    sources?: Source[];
 }
 
 interface ResultsPanelProps {
@@ -141,16 +147,16 @@ export const ResultsPanel = ({ selectedText, result, onClose }: ResultsPanelProp
                             </div>
                             
                             <div className="sources-list">
-                                {result.sources.map((sourceUrl, index) => (
+                                {result.sources.map((source, index) => (
                                     <div key={index} className="glass-panel source-card group">
                                         <div className="source-card-header">
                                             <span className="source-tag">Source {index + 1}</span>
-                                            <a href={sourceUrl} target="_blank" rel="noreferrer" className="source-link">
+                                            <a href={source.url} target="_blank" rel="noreferrer" className="source-link">
                                                 <ExternalLink size={14} />
                                             </a>
                                         </div>
-                                        <h4 className="source-title">{new URL(sourceUrl).hostname}</h4>
-                                        <p className="source-desc">{sourceUrl}</p>
+                                        <h4 className="source-title">{source.title}</h4>
+                                        <p className="source-desc">{source.snippet}</p>
                                         <div className="source-meta">
                                             <span className="meta-item"><Calendar size={11} /> 2026</span>
                                         </div>
