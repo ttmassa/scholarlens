@@ -44,9 +44,6 @@ interface ResultsPanelProps {
 }
 
 export const ResultsPanel = ({ selectedText, result, onClose }: ResultsPanelProps) => {
-    // Helper to determine verdict styling
-    const isErrorVerdict = result.verdict === FactCheckVerdict.False || result.verdict === FactCheckVerdict.Misleading;
-
     const statusConfig = {
         [FactCheckStatus.Loading]: {
             icon: <CircleEllipsis size={16} className="status-icon" />,

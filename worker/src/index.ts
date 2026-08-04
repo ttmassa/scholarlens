@@ -1,7 +1,7 @@
 import { FactCheckStatus, FactCheckVerdict, FactCheckResult } from '../../wxt/components/ResultsPanel/ResultsPanel';
 
 export interface Env {
-	AI_API_KEY?: string;
+	BRAVE_API_KEY?: string;
 }
 
 const CORS_HEADERS = {
