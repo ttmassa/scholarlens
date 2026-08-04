@@ -56,7 +56,7 @@ export default defineContentScript({
             } else {
               renderPanel(text, {
                 status: FactCheckStatus.Error,
-                explanation: response.error || "An error occurred while checking the claim."
+                explanation: "An error occurred while checking the claim."
               });
             }
           })

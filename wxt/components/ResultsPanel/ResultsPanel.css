@@ -155,14 +155,7 @@
     flex-direction: column;
     position: relative;
     overflow: hidden;
-}
-
-.verdict-card-error {
     border: 2px solid var(--color-error-20);
-}
-
-.verdict-card-success {
-    border: 2px solid var(--color-success-20);
 }
 
 .verdict-glow {
@@ -174,10 +167,8 @@
     border-radius: 50%;
     filter: blur(24px);
     pointer-events: none;
+    background-color: var(--color-error-10);
 }
-
-.glow-error { background-color: var(--color-error-10); }
-.glow-success { background-color: var(--color-success-10); }
 
 .verdict-content {
     position: relative;
@@ -197,10 +188,9 @@
     font-weight: 700;
     margin: 0;
     line-height: 1;
+    color: var(--color-error);
 }
 
-.verdict-card-error .verdict-title { color: var(--color-error); }
-.verdict-card-success .verdict-title { color: var(--color-success); }
 
 .score-badge {
     display: flex;
@@ -223,10 +213,8 @@
     font-size: 14px;
     font-weight: 700;
     line-height: 1;
+    color: var(--color-error);
 }
-
-.verdict-card-error .score-value { color: var(--color-error); }
-.verdict-card-success .score-value { color: var(--color-success); }
 
 .claim-section {
     margin-top: 4px;
@@ -259,7 +247,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    border: 2px solid var(--color-outline-variant-30);
+    border: 2px solid var(--color-error-10);
 }
 
 .panel-heading {

@@ -1,5 +1,6 @@
 import { 
     CircleCheck,
+    CircleEllipsis,
     CircleX,
     Search,
     Settings,
@@ -45,7 +46,21 @@ interface ResultsPanelProps {
 export const ResultsPanel = ({ selectedText, result, onClose }: ResultsPanelProps) => {
     // Helper to determine verdict styling
     const isErrorVerdict = result.verdict === FactCheckVerdict.False || result.verdict === FactCheckVerdict.Misleading;
-    const isSuccessStatus = result.status === FactCheckStatus.Success;
+
+    const statusConfig = {
+        [FactCheckStatus.Loading]: {
+            icon: <CircleEllipsis size={16} className="status-icon" />,
+            label: 'Checking...',
+        },
+        [FactCheckStatus.Success]: {
+            icon: <CircleCheck size={16} className="status-icon" />,
+            label: 'Check Complete',
+        },
+        [FactCheckStatus.Error]: {
+            icon: <CircleX size={16} className="status-icon" />,
+            label: 'Error',
+        },
+    } as const;
 
     return (
         <div className="panel-container">
@@ -69,21 +84,17 @@ export const ResultsPanel = ({ selectedText, result, onClose }: ResultsPanelProp
             <main className="panel-main">
                 {/* Status Indicator */}
                 <div className="status-indicator">
-                    {
-                        isSuccessStatus ? 
-                        <CircleCheck size={16} className="status-icon" /> :
-                        <CircleX size={16} className="status-icon" />
-                    }
-                    <span className="status-label">{isSuccessStatus ? "Check Complete" : "Error"}</span>
+                    {statusConfig[result.status].icon}
+                    <span className="status-label">{statusConfig[result.status].label}</span>
                 </div>
 
                 <div className="results-stack">
                     {/* Primary Verdict Card */}
-                    <div className={`glass-panel verdict-card ${isErrorVerdict ? 'verdict-card-error' : 'verdict-card-success'}`}>
-                        <div className={`verdict-glow ${isErrorVerdict ? 'glow-error' : 'glow-success'}`}></div>
+                    <div className={"glass-panel verdict-card"}>
+                        <div className={"verdict-glow"}></div>
                         <div className="verdict-content">
                             <div className="verdict-header">
-                                <h2 className="verdict-title">{result.verdict || 'LOADING'}</h2>
+                                <h2 className="verdict-title">{result.verdict || 'ERROR'}</h2>
                                 {result.score !== undefined && (
                                     <div className="score-badge">
                                         <span className="score-label">Score</span>
