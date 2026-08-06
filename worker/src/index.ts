@@ -6,6 +6,7 @@ export interface Env {
 	BRAVE_API_KEY?: string;
 	GEMINI_API_KEY?: string;
 	ALLOWED_ORIGIN?: string;
+	FACT_CHECK_CACHE?: KVNamespace;
 }
 
 interface BraveResultItem {
@@ -27,6 +28,7 @@ const factCheckResultSchema = z.object({
 	explanation: z.string().max(1000),
 });
 
+// Helper functions
 function getCorsHeaders(env: Env) {
 	return {
 		"Access-Control-Allow-Origin": env.ALLOWED_ORIGIN || "*",
@@ -42,6 +44,15 @@ function sanitizeText(text: string): string {
 		.replace(/&quot;/g, '"')
 		.replace(/&amp;/g, '&')
 		.trim();
+}
+
+// Hash the claim text to create a unique identifier for KV caching
+async function hashText(text: string): Promise<string> {
+	const normalized = text.trim().toLowerCase();
+	const encoder = new TextEncoder().encode(normalized);
+	const hashBuffer = await crypto.subtle.digest("SHA-256", encoder);
+	const hashArray = Array.from(new Uint8Array(hashBuffer));
+	return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 export default {
@@ -82,6 +93,25 @@ export default {
 
 			// Enforce input size limit (1000 characters) to prevent abuse and prompt buffer overflows
 			claim = sanitizeText(claim).slice(0, 1000);
+
+			// Compute hash for KV key
+			const claimHash = await hashText(claim);
+
+			// Check KV cache for existing fact-check result
+			if (env.FACT_CHECK_CACHE) {
+				const cachedResult = await env.FACT_CHECK_CACHE.get<FactCheckResult>(claimHash, "json");
+				if (cachedResult) {
+					console.log(`Cache hit for claim hash ${claimHash}. Returning cached result.`);
+					return new Response(JSON.stringify(cachedResult), {
+						status: 200,
+						headers: {
+							"Content-Type": "application/json",
+							"X-Cache": "HIT",
+							...corsHeaders,
+						}
+					});
+				}
+			}
 
 			// Query Brave Search API to retrieve relevant sources for the claim
 			const braveSearchUrl = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(claim)}&count=5`;
@@ -172,9 +202,21 @@ export default {
 				sources: sources,
 			};
 
+			// Store the result in KV cache for 7 days
+			if (env.FACT_CHECK_CACHE) {
+				await env.FACT_CHECK_CACHE.put(claimHash, JSON.stringify(factCheckResult), {
+					expirationTtl: 7 * 24 * 60 * 60
+				});
+				console.log(`Cached fact-check result for claim hash ${claimHash} in KV for 7 days.`);
+			}
+
 			return new Response(JSON.stringify(factCheckResult), {
 				status: 200,
-				headers: { "Content-Type": "application/json", ...corsHeaders },
+				headers: {
+					"Content-Type": "application/json",
+					"X-Cache": "MISS",
+					...corsHeaders
+				},
 			});
 		} catch (error: any) {
 			console.error("Worker error:", error);
