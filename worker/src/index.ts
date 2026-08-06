@@ -130,7 +130,7 @@ export default {
 
 			// Send the prompt to Gemini and require a structured output format as answer
 			const geminiResponse = await gemini.interactions.create({
-				model: "gemini-3.6-flash",
+				model: "gemini-3.5-flash-lite",
 				input: prompt,
 				response_format: {
 					type: "text",
