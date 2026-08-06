@@ -64,5 +64,8 @@
 
 ---
 
+## Features Ideas
+- **Highlight on new tab**: if the user clicks on one of the sources, open a new tab with the source and highlight the relevant quote (via `:target` or a small injected script)
+
 ## Working approach
 Code is written by Timothée. For each phase, bring the specific blocker (a prompt that's not classifying well, a CORS error, a positioning bug, the Bayesian update formula, etc.) for review/debugging rather than having the whole phase written ahead of time.
