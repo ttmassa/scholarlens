@@ -19,9 +19,15 @@ export default defineBackground(() => {
         body: JSON.stringify({ text: claimText }),
       })
       // Handle the response from the worker
-      .then(response => response.json())
-      .then(data => {
-        console.log('[Background] Received fact-check result from worker:', data);
+      .then(async (response) => {
+        const data = await response.json();
+        console.log('[Background] Received response from worker:', data);
+        
+        // Handle specific error codes here
+        if (response.status === 429) {
+          sendResponse({ success: false, error: data.error || "Too many requests. Please try again later." });
+          return;
+        }
 
         // Send the result back to the content script
         sendResponse({ success: true, result: data });

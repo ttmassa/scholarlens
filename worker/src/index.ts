@@ -7,6 +7,9 @@ export interface Env {
 	GEMINI_API_KEY?: string;
 	ALLOWED_ORIGIN?: string;
 	FACT_CHECK_CACHE?: KVNamespace;
+	RATE_LIMITER?: {
+		limit: (options: { key: string }) => Promise<{ success: boolean }>;
+	};
 }
 
 interface BraveResultItem {
@@ -110,6 +113,28 @@ export default {
 							...corsHeaders,
 						}
 					});
+				}
+			}
+
+			// Rate limiting check
+			const clientIp = request.headers.get("CF-Connecting-IP") || "127.0.0.1";
+
+			if (env.RATE_LIMITER) {
+				const { success } = await env.RATE_LIMITER.limit({ key: clientIp });
+				if (!success) {
+					return new Response(
+						JSON.stringify({ 
+							error: "Rate limit exceeded. Please try again later."
+						}),
+						{
+							status: 429,
+							headers: {
+								"Content-Type": "application/json",
+								"Retry-After": "60",
+								...corsHeaders
+							}
+						}
+					)
 				}
 			}
 
