@@ -8,6 +8,12 @@ export default defineBackground(() => {
     if (message.type === 'CHECK_TEXT') {
       const claimText = message.payload;
 
+      // Fast path check for local offline status
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        sendResponse({ success: false, error: "You are currently offline. Please check your internet connection and try again." });
+        return true;
+      }
+
       console.log('[Background] Received text from content script:', claimText);
 
       // Send the text to the worker for fact-checking
@@ -24,8 +30,8 @@ export default defineBackground(() => {
         console.log('[Background] Received response from worker:', data);
         
         // Handle specific error codes here
-        if (response.status === 429) {
-          sendResponse({ success: false, error: data.error || "Too many requests. Please try again later." });
+        if (!response.ok) {
+          sendResponse({ success: false, error: data.error });
           return;
         }
 

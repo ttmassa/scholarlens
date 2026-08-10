@@ -56,14 +56,14 @@ export default defineContentScript({
             } else {
               renderPanel(text, {
                 status: FactCheckStatus.Error,
-                explanation: "An error occurred while checking the claim."
+                explanation: response.error || "An error occurred while checking the claim."
               });
             }
           })
           .catch((error) => {
             renderPanel(text, {
               status: FactCheckStatus.Error,
-              explanation: error.toString() || "An error occurred while communicating with the extension."
+              explanation: error?.message || error?.toString() || "An error occurred while communicating with the extension."
             })
           })
       }

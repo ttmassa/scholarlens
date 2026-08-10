@@ -140,13 +140,26 @@ export default {
 
 			// Query Brave Search API to retrieve relevant sources for the claim
 			const braveSearchUrl = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(claim)}&count=5`;
-			const braveResponse = await fetch(braveSearchUrl, {
-				headers: {
-					"Accept": "application/json",
-					"Accept-Encoding": "gzip",
-					"X-Subscription-Token": env.BRAVE_API_KEY,
-				},
-			});
+			let braveResponse: Response;
+
+			try {
+				braveResponse = await fetch(braveSearchUrl, {
+					headers: {
+						"Accept": "application/json",
+						"Accept-Encoding": "gzip",
+						"X-Subscription-Token": env.BRAVE_API_KEY,
+					},
+				});
+			} catch (networkError) {
+				console.error("Upstream network connection error (Brave Search):", networkError);
+				return new Response(
+					JSON.stringify({ error: "Search service is currently unreachable (Network error)." }),
+					{
+						status: 503,
+						headers: { "Content-Type": "application/json", ...corsHeaders }
+					}
+				);
+			}
 
 			if (!braveResponse.ok) {
 				throw new Error(`Brave Search retrieval failed with status ${braveResponse.status}`);
@@ -184,33 +197,48 @@ export default {
 			- Always back your analysis with the sources provided; do not fabricate information or invent sources.`;
 
 			// Send the prompt to Gemini and require a structured output format as answer
-			const geminiResponse = await gemini.interactions.create({
-				model: "gemini-3.5-flash-lite",
-				input: prompt,
-				response_format: {
-					type: "text",
-					mime_type: "application/json",
-					schema: {
-						type: "object",
-						properties: {
-							verdict: {
-								type: "string",
-								enum: ["TRUE", "FALSE", "MISLEADING", "UNVERIFIED"],
-								description: "The verdict of the fact-checking process."
+
+			// Can't explicitly type the gemini response here as google/genai doesn't export the GoogleGenAIInteraction type
+			let geminiResponse;
+			try {
+				geminiResponse = await gemini.interactions.create({
+					model: "gemini-3.5-flash-lite",
+					input: prompt,
+					response_format: {
+						type: "text",
+						mime_type: "application/json",
+						schema: {
+							type: "object",
+							properties: {
+								verdict: {
+									type: "string",
+									enum: ["TRUE", "FALSE", "MISLEADING", "UNVERIFIED"],
+									description: "The verdict of the fact-checking process."
+								},
+								score: {
+									type: "integer",
+									description: "A confidence score (0-100) indicating the reliability of the verdict."
+								},
+								explanation: {
+									type: "string",
+									description: "A brief explanation of the verdict, including reasoning and context."
+								}
 							},
-							score: {
-								type: "integer",
-								description: "A confidence score (0-100) indicating the reliability of the verdict."
-							},
-							explanation: {
-								type: "string",
-								description: "A brief explanation of the verdict, including reasoning and context."
-							}
-						},
-						required: ["verdict", "score", "explanation"],
+							required: ["verdict", "score", "explanation"],
+						}
 					}
-				}
-			});
+				});
+
+			} catch (geminiError) {
+				console.error("Gemini API error:", geminiError);
+				return new Response(
+					JSON.stringify({ error: "AI analysis service is currently unreachable." }),
+					{
+						status: 503,
+						headers: { "Content-Type": "application/json", ...corsHeaders }
+					}
+				);
+			}
 
 			const geminiResult = JSON.parse(geminiResponse.output_text || "{}");
 			const parsedResult = factCheckResultSchema.safeParse(geminiResult);
@@ -246,10 +274,18 @@ export default {
 		} catch (error: any) {
 			console.error("Worker error:", error);
 
-			return new Response(JSON.stringify({ error: "An error occurred during fact checking." }), {
-				status: 500,
-				headers: { "Content-Type": "application/json", ...corsHeaders },
-			});
+			return new Response(
+				JSON.stringify({
+					error: "An unexpected error occurred while processing the request. Please try again later."
+				}),
+				{
+					status: 500,
+					headers: {
+						"Content-Type": "application/json",
+						...corsHeaders
+					}
+				}
+			);
 		}
 	}
 };
