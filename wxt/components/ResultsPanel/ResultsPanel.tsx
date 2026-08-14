@@ -27,6 +27,7 @@ export enum FactCheckVerdict {
     False = 'FALSE',
     Misleading = 'MISLEADING',
     Unverified = 'UNVERIFIED',
+    Uncheckable = 'UNCHECKABLE',
 }
 
 export interface Source {
