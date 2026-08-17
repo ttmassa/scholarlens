@@ -11,9 +11,17 @@ import {
     BookOpen,
     ExternalLink,
     Calendar,
-    X
+    X,
+    Globe
 } from "lucide-react";
 import './ResultsPanel.css';
+
+export const SUPPORTED_LANGUAGES = [
+    { code: "English", label: "EN" },
+    { code: 'French', label: 'FR' },
+    { code: 'Spanish', label: 'ES' },
+    { code: 'German', label: 'DE' },
+]
 
 // Types and Enums
 export enum FactCheckStatus {
@@ -47,10 +55,12 @@ export interface FactCheckResult {
 interface ResultsPanelProps {
     selectedText: string;
     result: FactCheckResult;
+    currentLanguage: string;
+    onLanguageChange: (lang: string) => void,
     onClose: () => void;
 }
 
-export const ResultsPanel = ({ selectedText, result, onClose }: ResultsPanelProps) => {
+export const ResultsPanel = ({ selectedText, result, currentLanguage, onLanguageChange, onClose }: ResultsPanelProps) => {
     // Configuration for status indicators
     const statusConfig = {
         [FactCheckStatus.Loading]: {
@@ -87,6 +97,29 @@ export const ResultsPanel = ({ selectedText, result, onClose }: ResultsPanelProp
                     <button className="icon-btn" aria-label="Settings">
                         <Settings size={20} />
                     </button>
+                    {/* Language Selector Button */}
+                    <div className="language-selector-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Globe size={16} />
+                        <select 
+                            value={currentLanguage} 
+                            onChange={(e) => onLanguageChange(e.target.value)}
+                            style={{
+                                background: 'transparent',
+                                color: 'inherit',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                borderRadius: '4px',
+                                padding: '2px 4px',
+                                fontSize: '12px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            {SUPPORTED_LANGUAGES.map((lang) => (
+                                <option key={lang.code} value={lang.code} style={{ background: '#1e1e1e', color: '#fff' }}>
+                                    {lang.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                     <button className="icon-btn" aria-label="Close" onClick={onClose}>
                         <X size={20} />
                     </button>

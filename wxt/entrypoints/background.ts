@@ -6,7 +6,7 @@ export default defineBackground(() => {
   // Listen for messages from content scripts
   browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'CHECK_TEXT') {
-      const claimText = message.payload;
+      const { payload: claimText, targetLanguage } = message;
 
       // Fast path check for local offline status
       if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -22,7 +22,7 @@ export default defineBackground(() => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text: claimText }),
+        body: JSON.stringify({ text: claimText, language: targetLanguage }),
       })
       // Handle the response from the worker
       .then(async (response) => {

@@ -14,6 +14,7 @@ export default defineContentScript({
     let resultsPanelContainer: HTMLDivElement | null = null;
     let resultsPanelRoot: ReturnType<typeof ReactDOM.createRoot> | null = null;
 
+    // Helper functions
     const removeButton = () => {
       // Unmount React component
       buttonRoot?.unmount();
@@ -30,13 +31,57 @@ export default defineContentScript({
       // Remove the container from the DOM
       resultsPanelContainer?.remove();
       resultsPanelContainer = null;
-    }
-    
+    };
+
+    const getPreferredLanguage = async (): Promise<string> => {
+      try {
+        // Safe check for WXT storage auto-import or extension storage API
+        if (typeof storage !== 'undefined' && storage?.getItem) {
+          return (await storage.getItem<string>('local:preferredLanguage')) || 'English';
+        }
+      } catch (err) {
+        console.warn('[ScholarLens] Failed to read language preference:', err);
+      }
+      return 'English';
+    };
+
+    const runFactCheck = async (text: string, lang?: string) => {
+      // Render the results panel in loading state immediately so UI updates on click
+      renderPanel(text, undefined, lang || 'English');
+
+      const targetLanguage = lang || await getPreferredLanguage();
+
+      // If language changed after resolving preference, refresh the header label
+      if (!lang && targetLanguage !== 'English') {
+        renderPanel(text, undefined, targetLanguage);
+      }
+
+      // Send the selected text to the background script for fact-checking
+      browser.runtime.sendMessage({ type: 'CHECK_TEXT', payload: text, targetLanguage })
+        .then((response) => {
+          if (response.success) {
+            renderPanel(text, response.result, targetLanguage);
+          } else {
+            renderPanel(text, {
+              status: FactCheckStatus.Error,
+              explanation: response.error || "An error occurred while checking the claim.",
+            }, targetLanguage);
+          }
+        })
+        .catch((error) => {
+          renderPanel(text, {
+            status: FactCheckStatus.Error,
+            explanation: error?.message || error?.toString() || "An error occurred while communicating with the extension."
+          }, targetLanguage);
+        });
+    };
+
+    // Render the button and handle the fact-checking process
     const renderButton = () => {
       const selection = window.getSelection();
       const text = selection?.toString().trim();
 
-      if (!text || selection?.isCollapsed) {
+      if (!text || !selection || selection.isCollapsed || selection.rangeCount === 0) {
         removeButton();
         return;
       }
@@ -44,29 +89,8 @@ export default defineContentScript({
       const handleClick = () => {
         removeButton();
         removePanel();
-
-        // Render the results panel in loading state
-        renderPanel(text);
-        
-        // Send the selected text to the background script for fact-checking
-        browser.runtime.sendMessage({ type: 'CHECK_TEXT', payload: text })
-          .then((response) => {
-            if (response.success) {
-              renderPanel(text, response.result);
-            } else {
-              renderPanel(text, {
-                status: FactCheckStatus.Error,
-                explanation: response.error || "An error occurred while checking the claim."
-              });
-            }
-          })
-          .catch((error) => {
-            renderPanel(text, {
-              status: FactCheckStatus.Error,
-              explanation: error?.message || error?.toString() || "An error occurred while communicating with the extension."
-            })
-          })
-      }
+        runFactCheck(text);
+      };
 
       const range = selection!.getRangeAt(0);
       // Get all bounding rectangles across wrapped lines
@@ -93,7 +117,7 @@ export default defineContentScript({
       buttonContainer.style.left = `${targetRect.left + window.scrollX}px`;
     };
 
-    const renderPanel = (selectedText: string, result?: FactCheckResult) => {
+    const renderPanel = (selectedText: string, result?: FactCheckResult, lang: string = "English") => {
       if (!resultsPanelContainer) {
         // Create a container for the React component
         resultsPanelContainer = document.createElement('div');
@@ -107,6 +131,19 @@ export default defineContentScript({
         resultsPanelRoot = ReactDOM.createRoot(resultsPanelContainer);
       }
 
+      const handleLanguageChange = async (newLang: string) => {
+        try {
+          if (typeof storage !== 'undefined' && storage?.setItem) {
+            await storage.setItem('local:preferredLanguage', newLang);
+          } else if (typeof browser !== 'undefined' && browser.storage?.local) {
+            await browser.storage.local.set({ preferredLanguage: newLang });
+          }
+        } catch (err) {
+          console.warn('[ScholarLens] Failed to save language preference:', err);
+        }
+        runFactCheck(selectedText, newLang);
+      };
+
       // Default to loading state if no result is provided
       const resultToRender: FactCheckResult = result || {
         status: FactCheckStatus.Loading,
@@ -114,7 +151,7 @@ export default defineContentScript({
       };
 
       resultsPanelRoot?.render(
-        <ResultsPanel selectedText={selectedText} result={resultToRender} onClose={removePanel} />
+        <ResultsPanel selectedText={selectedText} result={resultToRender} currentLanguage={lang} onLanguageChange={handleLanguageChange} onClose={removePanel} />
       );
     };
 
@@ -145,5 +182,9 @@ export default defineContentScript({
     document.addEventListener('scroll', () => {
       removeButton();
     }, { capture: true, passive: true });
+
+    document.addEventListener('resize', () => {
+      removeButton();
+    }, { passive: true });
   },
 });

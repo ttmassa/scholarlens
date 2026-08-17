@@ -58,6 +58,22 @@ async function hashText(text: string): Promise<string> {
 	return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Convert full language names or input codes into ISO 639-1 format
+function getIsoLanguageCode(lang: string): string {
+    const normalized = lang.trim().toLowerCase();
+    const isoMap: Record<string, string> = {
+        english: 'en',
+        french: 'fr',
+        spanish: 'es',
+        german: 'de',
+        en: 'en',
+        fr: 'fr',
+        es: 'es',
+        de: 'de'
+    };
+    return isoMap[normalized] || 'en';
+}
+
 export default {
 	async fetch(request: Request, env: Env): Promise<Response> {
 		const corsHeaders = getCorsHeaders(env);
@@ -84,8 +100,9 @@ export default {
 
 		try {
 			// Parse and validate the claim text from the request body
-			const body = await request.json() as { text?: string };
+			const body = await request.json() as { text?: string, language?: string };
 			let claim = body?.text;
+			let targetLanguage = body?.language || "English";
 
 			if (!claim || typeof claim !== 'string') {
 				return new Response(JSON.stringify({ error: "Missing or invalid 'text' parameter" }), {
@@ -97,14 +114,14 @@ export default {
 			// Enforce input size limit (1000 characters) to prevent abuse and prompt buffer overflows
 			claim = sanitizeText(claim).slice(0, 1000);
 
-			// Compute hash for KV key
-			const claimHash = await hashText(claim);
+			// Compute hash for KV key and include targetLanguage in hash to prevent cache collisions across languages
+			const claimHash = await hashText(`${claim}:${targetLanguage.toLowerCase()}`);
 
 			// Check KV cache for existing fact-check result
 			if (env.FACT_CHECK_CACHE) {
 				const cachedResult = await env.FACT_CHECK_CACHE.get<FactCheckResult>(claimHash, "json");
 				if (cachedResult) {
-					console.log(`Cache hit for claim hash ${claimHash}. Returning cached result.`);
+					console.log(`Cache hit for claim hash ${claimHash} (${targetLanguage}). Returning cached result.`);
 					return new Response(JSON.stringify(cachedResult), {
 						status: 200,
 						headers: {
@@ -139,7 +156,7 @@ export default {
 			}
 
 			// Query Brave Search API to retrieve relevant sources for the claim
-			const braveSearchUrl = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(claim)}&count=5`;
+			const braveSearchUrl = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(claim)}&count=5&search_lang=${encodeURIComponent(getIsoLanguageCode(targetLanguage))}`;
 			let braveResponse: Response;
 
 			try {
@@ -213,6 +230,7 @@ export default {
 			- Provide a verdict: TRUE, FALSE, MISLEADING, UNVERIFIED, or UNCHECKABLE.
 			- Use UNCHECKABLE if the claim is highly subjective, a personal opinion, or inherently impossible to fact-check.
 			- Assign a confidence score (0-100) for the verdict based on the reliability of the sources and the strength of the evidence.
+			- LANGUAGE REQUIREMENT: Write the explanation STRICTLY in ${targetLanguage}, regardless of the language used in <user_claim>
 			- Provide a 2-sentence explanation summarizing evidence and reasoning behind the verdict.
 			- Always back your analysis with the sources provided; do not fabricate information or invent sources.`;
 
