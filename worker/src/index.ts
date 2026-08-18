@@ -156,7 +156,11 @@ export default {
 			}
 
 			// Query Brave Search API to retrieve relevant sources for the claim
-			const braveSearchUrl = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(claim)}&count=5&search_lang=${encodeURIComponent(getIsoLanguageCode(targetLanguage))}`;
+
+			// Restrict the search results to the target language by using the lang: parameter in the query
+			const langCode = getIsoLanguageCode(targetLanguage);
+			const searchQuery = `${claim} lang:${langCode}`;
+			const braveSearchUrl = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(searchQuery)}&count=5&search_lang=${encodeURIComponent(getIsoLanguageCode(targetLanguage))}`;
 			let braveResponse: Response;
 
 			try {
