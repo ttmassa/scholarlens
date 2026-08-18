@@ -1,6 +1,7 @@
 import ReactDOM from 'react-dom/client'
 import { HoverButton } from '@/components/HoverButton/HoverButton';
 import { ResultsPanel, FactCheckStatus, FactCheckResult } from '@/components/ResultsPanel/ResultsPanel';
+import { storage } from 'wxt/utils/storage';
 
 export default defineContentScript({
   matches: ['<all_urls>'],
@@ -35,30 +36,25 @@ export default defineContentScript({
 
     const getPreferredLanguage = async (): Promise<string> => {
       try {
-        // Safe check for WXT storage auto-import or extension storage API
-        if (typeof storage !== 'undefined' && storage?.getItem) {
-          return (await storage.getItem<string>('local:preferredLanguage')) || 'English';
-        }
+        const storedLang = await storage.getItem<string>('local:preferredLanguage');
+        return storedLang || 'English';
       } catch (err) {
         console.warn('[ScholarLens] Failed to read language preference:', err);
       }
       return 'English';
     };
 
+    // Fact-checking process
     const runFactCheck = async (text: string, lang?: string) => {
-      // Render the results panel in loading state immediately so UI updates on click
-      renderPanel(text, undefined, lang || 'English');
-
       const targetLanguage = lang || await getPreferredLanguage();
 
-      // If language changed after resolving preference, refresh the header label
-      if (!lang && targetLanguage !== 'English') {
-        renderPanel(text, undefined, targetLanguage);
-      }
+      // Render the results panel in loading state immediately so UI updates on click
+      renderPanel(text, undefined, targetLanguage);
 
       // Send the selected text to the background script for fact-checking
       browser.runtime.sendMessage({ type: 'CHECK_TEXT', payload: text, targetLanguage })
         .then((response) => {
+          // Render the panel with the result if the response is successful
           if (response.success) {
             renderPanel(text, response.result, targetLanguage);
           } else {
@@ -76,7 +72,6 @@ export default defineContentScript({
         });
     };
 
-    // Render the button and handle the fact-checking process
     const renderButton = () => {
       const selection = window.getSelection();
       const text = selection?.toString().trim();
@@ -86,6 +81,7 @@ export default defineContentScript({
         return;
       }
 
+      // Run the fact-checking process when the button is clicked
       const handleClick = () => {
         removeButton();
         removePanel();
@@ -131,16 +127,16 @@ export default defineContentScript({
         resultsPanelRoot = ReactDOM.createRoot(resultsPanelContainer);
       }
 
+      // Store the user's preferred language in local storage when they change it
       const handleLanguageChange = async (newLang: string) => {
+        if (newLang === lang) return;
+
         try {
-          if (typeof storage !== 'undefined' && storage?.setItem) {
-            await storage.setItem('local:preferredLanguage', newLang);
-          } else if (typeof browser !== 'undefined' && browser.storage?.local) {
-            await browser.storage.local.set({ preferredLanguage: newLang });
-          }
+          await storage.setItem('local:preferredLanguage', newLang);
         } catch (err) {
           console.warn('[ScholarLens] Failed to save language preference:', err);
         }
+        // Re-run the fact-checking process to update the results in the new language
         runFactCheck(selectedText, newLang);
       };
 

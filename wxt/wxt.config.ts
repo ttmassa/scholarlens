@@ -7,7 +7,7 @@ export default defineConfig({
     name: 'ScholarLens',
     description: 'Real-time fact-checking extension for academic research',
     version: '0.1.0',
-    permissions: [],
+    permissions: ['storage'],
     host_permissions: [
       'https://localhost:8787/*',
       'https://*.workers.dev/*'
