@@ -216,7 +216,7 @@ export default {
 			// Query Gemini API to analyze the claim against the retrieved sources
 			const gemini = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
 
-			const prompt = `You are an automated fact-checking engine.
+			const prompt = `You are an automated fact-checking engine expert.
 			Analyze the user claim enclosed in <user_claim> tags against the search evidence provided in <sources>.
 
 			<user_claim>
@@ -236,7 +236,9 @@ export default {
 			- Assign a confidence score (0-100) for the verdict based on the reliability of the sources and the strength of the evidence.
 			- LANGUAGE REQUIREMENT: Write the explanation STRICTLY in ${targetLanguage}, regardless of the language used in <user_claim>
 			- Provide a 2-sentence explanation summarizing evidence and reasoning behind the verdict.
-			- Always back your analysis with the sources provided; do not fabricate information or invent sources.`;
+			- Always back your analysis with the sources provided; do not fabricate information or invent sources.
+			- Use an academic, research-oriented tone, avoiding sensationalism, clickbait, or commercial language.
+			- Be precise and concise. Avoid unnecessary filler or verbose explanations.`;
 
 			// Send the prompt to Gemini and require a structured output format as answer
 
