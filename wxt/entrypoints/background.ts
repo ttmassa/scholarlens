@@ -45,6 +45,27 @@ export default defineBackground(() => {
       });
       return true;
     }
+
+    if (message.type === 'OPEN_EXPORT_PREVIEW') {
+      const content = message?.payload?.content;
+
+      if (typeof content !== 'string' || !content.trim()) {
+        sendResponse({ success: false, error: 'Export content is empty.' });
+        return false;
+      }
+
+      const dataUrl = `data:text/plain;charset=utf-8,${encodeURIComponent(content)}`;
+
+      browser.tabs.create({ url: dataUrl })
+        .then(() => sendResponse({ success: true }))
+        .catch((error) => {
+          console.error('[Background] Failed to open export preview tab:', error);
+          sendResponse({ success: false, error: error?.toString?.() || 'Failed to open preview tab.' });
+        });
+
+      return true;
+    }
+
     return false;
   });
   
