@@ -1,7 +1,9 @@
 export default defineBackground(() => {
   console.log('[Background] Service Worker started.');
 
-  const WORKER_URL = "http://localhost:8787/api/check";
+  const WORKER_DEV_URL = "http://localhost:8787/api/check";
+  const WORKER_PROD_URL = "https://scholarlens-worker.scholarlens.workers.dev/api/check";
+  const WORKER_URL = import.meta.env.DEV ? WORKER_DEV_URL : WORKER_PROD_URL;
 
   // Listen for messages from content scripts
   browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
