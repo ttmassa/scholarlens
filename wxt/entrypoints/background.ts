@@ -4,7 +4,8 @@ export default defineBackground(() => {
   const WORKER_URL = "http://localhost:8787/api/check";
 
   // Listen for messages from content scripts
-  browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    // Fact-checking message type
     if (message.type === 'CHECK_TEXT') {
       const { payload: claimText, targetLanguage } = message;
 
@@ -46,6 +47,7 @@ export default defineBackground(() => {
       return true;
     }
 
+    // Export preview message type
     if (message.type === 'OPEN_EXPORT_PREVIEW') {
       const content = message?.payload?.content;
 
@@ -54,7 +56,8 @@ export default defineBackground(() => {
         return false;
       }
 
-      const dataUrl = `data:text/plain;charset=utf-8,${encodeURIComponent(content)}`;
+      const isPdf = content.startsWith('data:application/pdf') || content.startsWith('data:application/octet-stream') || content.startsWith('data:application/pdf;base64');
+      const dataUrl = isPdf ? content : `data:text/plain;charset=utf-8,${encodeURIComponent(content)}`;
 
       browser.tabs.create({ url: dataUrl })
         .then(() => sendResponse({ success: true }))

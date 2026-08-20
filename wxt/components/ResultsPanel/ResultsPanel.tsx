@@ -13,6 +13,7 @@ import {
     X,
     Globe
 } from "lucide-react";
+import { jsPDF } from 'jspdf';
 import { useEffect, useRef, useState } from "react";
 import './ResultsPanel.css';
 
@@ -112,13 +113,184 @@ export const ResultsPanel = ({ selectedText, result, currentLanguage, onLanguage
         
     }
 
-    // Ask background script to open a preview tab so page CSP/popup blockers don't interfere.
+    // Create a PDF export of the fact-check result and open it in a new tab
     const handleExportClick = () => {
-        const exportContent = `Claim: "${selectedText}"\nVerdict: ${result.verdict || 'N/A'}\nScore: ${result.score !== undefined ? result.score + '%' : 'N/A'}\nExplanation: ${result.explanation || 'N/A'}\nSources: ${result.sources && result.sources.length > 0 ? result.sources.map(src => `${src.title} (${src.url})`).join(', ') : 'N/A'}`;
+        const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 52;
+        const contentWidth = pageWidth - margin * 2;
+        const generatedAt = new Date().toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+        });
+
+        const verdictPalette: Record<string, [number, number, number]> = {
+            TRUE: [22, 163, 74],
+            FALSE: [220, 38, 38],
+            MISLEADING: [234, 120, 36],
+            UNVERIFIED: [71, 85, 105],
+            UNCHECKABLE: [99, 102, 241],
+        };
+
+        const safeText = (value: string | undefined, fallback = 'N/A') => value && value.trim() ? value : fallback;
+
+        doc.setProperties({
+            title: 'ScholarLens Fact Check',
+            subject: 'Fact-check summary',
+            author: 'ScholarLens',
+            creator: 'ScholarLens',
+        });
+
+        doc.setFillColor(250, 250, 249);
+        doc.rect(0, 0, pageWidth, 68, 'F');
+
+        doc.setTextColor(17, 24, 39);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(22);
+        doc.text('ScholarLens', margin, 38);
+
+        doc.setTextColor(100, 116, 139);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9.5);
+        doc.text(`Generated ${generatedAt}`, pageWidth - margin, 38, { align: 'right' });
+
+        doc.setDrawColor(226, 232, 240);
+        doc.line(margin, 78, pageWidth - margin, 78);
+
+        let y = 96;
+
+        const verdict = safeText(result.verdict, 'UNVERIFIED');
+        const verdictColor = verdictPalette[verdict] || verdictPalette.UNVERIFIED;
+        const confidence = result.score !== undefined ? `${result.score}%` : 'N/A';
+
+        doc.setTextColor(100, 116, 139);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.8);
+        doc.text('VERDICT', margin, y);
+
+        doc.setFillColor(...verdictColor);
+        doc.roundedRect(margin, y + 10, 118, 22, 5, 5, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.text(verdict, margin + 59, y + 25, { align: 'center' });
+
+        const reliabilityX = pageWidth - margin - 120;
+
+        doc.setTextColor(100, 116, 139);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.8);
+        doc.text('RELIABILITY', reliabilityX, y);
+
+        doc.setTextColor(17, 24, 39);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(18);
+        doc.text(confidence, reliabilityX, y + 25);
+
+        y += 54;
+
+        doc.setTextColor(100, 116, 139);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.8);
+        doc.text('CLAIM', margin, y);
+        y += 14;
+
+        const claimLines = doc.splitTextToSize(safeText(selectedText), contentWidth - 10);
+        doc.setTextColor(17, 24, 39);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(12);
+        const claimHeight = Math.max(28, claimLines.length * 12 + 8);
+        claimLines.slice(0, 5).forEach((line: string, index: number) => {
+            doc.text(line, margin, y + index * 12);
+        });
+        y += claimHeight + 18;
+
+        doc.setDrawColor(226, 232, 240);
+        doc.line(margin, y, pageWidth - margin, y);
+        y += 18;
+
+        const rawAssessment = result.explanation && result.explanation.trim()
+            ? result.explanation.trim().replace(/\s+/g, ' ')
+            : 'No explanation provided for this claim.';
+        const assessmentSummary = (() => {
+            const sentence = rawAssessment.split(/(?<=[.!?])\s+/)[0] || rawAssessment;
+            return sentence.length > 180 ? `${sentence.slice(0, 177).trim()}…` : sentence;
+        })();
+
+        doc.setTextColor(100, 116, 139);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.8);
+        doc.text('ASSESSMENT', margin, y);
+        y += 14;
+
+        doc.setTextColor(17, 24, 39);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(11);
+        const assessmentLines = doc.splitTextToSize(assessmentSummary, contentWidth - 14);
+        const assessmentBlockHeight = Math.max(28, assessmentLines.length * 12 + 8);
+
+        assessmentLines.forEach((line: string, index: number) => {
+            if (y + index * 12 > pageHeight - 100) {
+                doc.addPage();
+                y = 52;
+            }
+            doc.text(line, margin, y + index * 12);
+        });
+
+        y += assessmentBlockHeight + 18;
+
+        doc.setDrawColor(226, 232, 240);
+        doc.line(margin, y, pageWidth - margin, y);
+        y += 18;
+
+        doc.setTextColor(100, 116, 139);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.8);
+        doc.text('SOURCES', margin, y);
+        y += 12;
+
+        const sources = result.sources && result.sources.length > 0 ? result.sources.slice(0, 3) : [];
+
+        if (sources.length === 0) {
+            doc.setTextColor(100, 116, 139);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10.5);
+            doc.text('No sources were included for this export.', margin, y + 8);
+        } else {
+            sources.forEach((source, index) => {
+                if (y > pageHeight - 70) {
+                    doc.addPage();
+                    y = 52;
+                }
+
+                doc.setTextColor(100, 116, 139);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9.5);
+                doc.text(String(index + 1), margin, y + 10);
+
+                doc.setTextColor(17, 24, 39);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10.5);
+                const title = doc.splitTextToSize(source.title || 'Untitled source', contentWidth - 30);
+                doc.text(title[0], margin + 22, y + 10);
+
+                doc.setTextColor(71, 85, 105);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9.5);
+                const urlText = doc.splitTextToSize(source.url || 'N/A', contentWidth - 30);
+                doc.text(urlText[0], margin + 22, y + 22);
+
+                y += 34;
+            });
+        }
+
+        const pdfDataUrl = doc.output('datauristring');
 
         browser.runtime.sendMessage({
             type: 'OPEN_EXPORT_PREVIEW',
-            payload: { content: exportContent },
+            payload: { content: pdfDataUrl },
         }).catch((error) => {
             console.error('[ScholarLens] Failed to open export preview:', error);
         });
