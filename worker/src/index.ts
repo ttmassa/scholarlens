@@ -237,7 +237,6 @@ export default {
 			- LANGUAGE REQUIREMENT: Write the explanation STRICTLY in ${targetLanguage}, regardless of the language used in <user_claim>
 			- Provide a 2-sentence explanation summarizing evidence and reasoning behind the verdict. Do not use generic phrases or ai slop. Go straight to the point with specific references to the sources.
 			- Do not fabricate sources or invent information. Only use the provided sources to support your analysis.
-			- Always back your analysis with the sources provided; do not fabricate information or invent sources.
 			- Use an academic, research-oriented tone, avoiding sensationalism, clickbait, or commercial language.
 			- Be precise and concise. Avoid unnecessary filler or verbose explanations.`;
 
