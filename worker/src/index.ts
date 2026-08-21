@@ -235,7 +235,7 @@ export default {
 			- Use UNCHECKABLE if the claim is highly subjective, a personal opinion, or inherently impossible to fact-check.
 			- Assign a confidence score (0-100) for the verdict based on the reliability of the sources and the strength of the evidence.
 			- LANGUAGE REQUIREMENT: Write the explanation STRICTLY in ${targetLanguage}, regardless of the language used in <user_claim>
-			- Provide a 2-sentence explanation summarizing evidence and reasoning behind the verdict. Do not use generic phrases or ai slop. Go straight to the point with specific references to the sources.
+			- Provide a 2-sentence explanation summarizing evidence and reasoning behind the verdict. Do not use generic phrases or ai slop. Go straight to the point.
 			- Do not fabricate sources or invent information. Only use the provided sources to support your analysis.
 			- Use an academic, research-oriented tone, avoiding sensationalism, clickbait, or commercial language.
 			- Be precise and concise. Avoid unnecessary filler or verbose explanations.`;
