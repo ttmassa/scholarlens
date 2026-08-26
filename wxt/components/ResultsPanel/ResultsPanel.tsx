@@ -43,6 +43,7 @@ export interface Source {
     title: string;
     url: string;
     description: string;
+    date?: string;
 }
 
 export interface FactCheckResult {
@@ -429,9 +430,13 @@ export const ResultsPanel = ({ selectedText, result, currentLanguage, onLanguage
                                             </div>
                                             <h4 className="source-title">{source.title}</h4>
                                             <p className="source-desc">{truncateDescription(source.description)}</p>
-                                            <div className="source-meta">
-                                                <span className="meta-item"><Calendar size={11} /> 2026</span>
-                                            </div>
+                                            {source.date && (
+                                                <div className="source-meta">
+                                                    <span className="meta-item">
+                                                        <Calendar size={11} /> {source.date}
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

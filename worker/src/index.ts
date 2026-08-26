@@ -16,6 +16,7 @@ interface BraveResultItem {
 	title: string;
 	url: string;
 	description: string;
+    page_age?: string;
 }
 
 interface BraveSearchResponse {
@@ -47,6 +48,15 @@ function sanitizeText(text: string): string {
 		.replace(/&quot;/g, '"')
 		.replace(/&amp;/g, '&')
 		.trim();
+}
+
+// Convert brave api date format from 2025-09-12T00:00:00 to YYYY
+function sanitizeDate(date: string): string {
+	const datePattern = /^(\d{4})-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
+	if (datePattern.test(date)) {
+		return date.substring(0, 4);
+	}
+	return date;
 }
 
 // Hash the claim text to create a unique identifier for KV caching
@@ -192,6 +202,7 @@ export default {
 				title: sanitizeText(result.title),
 				url: result.url,
 				description: sanitizeText(result.description),
+				date: result.page_age ? sanitizeDate(result.page_age) : undefined,
 			}));
 
 			// Return an unverified result if no sources were found
