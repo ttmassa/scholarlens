@@ -1,31 +1,32 @@
-import { useState } from 'react';
-import wxtLogo from '/wxt.svg';
-import './App.css';
+import { ExternalLink, Settings } from 'lucide-react'
+import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0);
+export default function App() {
+  const url = window.location.href
 
   return (
-    <>
-      <div>
-        <a href="https://wxt.dev" target="_blank">
-          <img src={wxtLogo} className="logo" alt="WXT logo" />
-        </a>
-      </div>
-      <h1>WXT + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the WXT and React logos to learn more
-      </p>
-    </>
-  );
-}
+    <div className='popup'>
+      <header className='popup-header'>
+        <div className='brand'>
+          <div className='logo-wrap'>
+            <img src='/icon/32.png' className='logo' alt='ScholarLens logo' />
+          </div>
 
-export default App;
+          <div className='header-copy'>
+            <h2 className='header-title'>ScholarLens</h2>
+            <p className='header-url'>{url}</p>
+          </div>
+        </div>
+
+        <div className='header-btns'>
+          <button className='icon-btn' aria-label='Settings'>
+            <Settings size={15} />
+          </button>
+          <button className='icon-btn' aria-label='Open source'>
+            <ExternalLink size={15} />
+          </button>
+        </div>
+      </header>
+    </div>
+  )
+}
