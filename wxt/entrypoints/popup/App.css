@@ -37,6 +37,7 @@ img {
   gap: 12px;
   min-height: 54px;
   width: 100%;
+  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
 }
 
 .brand {
@@ -112,4 +113,26 @@ img {
 .icon-btn svg {
   width: 14px;
   height: 14px;
+}
+
+.search-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.search-title, .history-title {
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search-input {
+  flex: 1;
+  border-radius: 5px;
+  border: 1px solid var(--button-border);
 }
