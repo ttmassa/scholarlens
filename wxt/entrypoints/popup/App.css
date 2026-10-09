@@ -1,9 +1,13 @@
 :root {
-  --popup-bg: #ffffff;
-  --text: #111827;
-  --muted: #6b7280;
-  --button-bg: rgba(17, 24, 39, 0.04);
-  --button-border: rgba(17, 24, 39, 0.08);
+  --popup-bg: #fff8f7;
+  --surface: rgba(255, 255, 255, 0.76);
+  --surface-high: #fce2df;
+  --primary: #760009;
+  --primary-soft: rgba(118, 0, 9, 0.1);
+  --text: #261817;
+  --muted: #59413e;
+  --border: rgba(225, 191, 187, 0.55);
+  --button-bg: rgba(255, 255, 255, 0.62);
 }
 
 * {
@@ -13,7 +17,9 @@
 html,
 body {
   margin: 0;
-  background: var(--popup-bg);
+  min-width: 400px;
+  background: radial-gradient(circle at top right, #fce2df, var(--popup-bg));
+  color: var(--text);
   font-family: Inter, system-ui, sans-serif;
 }
 
@@ -23,11 +29,9 @@ img {
 }
 
 .popup {
-  width: 100%;
-  min-height: 100vh;
-  min-width: 400px;
-  background: var(--popup-bg);
-  padding: 10px 12px;
+  width: 400px;
+  min-height: 470px;
+  padding: 12px;
 }
 
 .popup-header {
@@ -37,7 +41,7 @@ img {
   gap: 12px;
   min-height: 54px;
   width: 100%;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+  border-bottom: 1px solid var(--border);
 }
 
 .brand {
@@ -75,7 +79,7 @@ img {
   font-size: 1.05rem;
   line-height: 1.2;
   font-weight: 700;
-  color: var(--text);
+  color: var(--primary);
   letter-spacing: -0.02em;
 }
 
@@ -102,7 +106,7 @@ img {
   height: 28px;
   padding: 0;
   border-radius: 8px;
-  border: 1px solid var(--button-border);
+  border: 1px solid var(--border);
   background: var(--button-bg);
   color: #374151;
   display: grid;
@@ -118,21 +122,157 @@ img {
 .search-container {
   display: flex;
   flex-direction: column;
+  gap: 8px;
 }
 
 .search-title, .history-title {
-  font-size: 0.8rem;
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--text);
 }
 
 .search-bar {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
 }
 
 .search-input {
   flex: 1;
-  border-radius: 5px;
-  border: 1px solid var(--button-border);
+  min-width: 0;
+  padding: 8px 9px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+.search-input::placeholder {
+  color: #8b7774;
+}
+
+.search-button {
+  flex-shrink: 0;
+  background: var(--primary);
+  color: white;
+}
+
+.search-button:hover {
+  background: #5d0007;
+}
+
+.popup-main {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding-top: 18px;
+}
+
+.history-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.claim-card,
+.analysis-card {
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 10px 24px -20px rgba(38, 24, 23, 0.4);
+}
+
+.claim-text {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.claim-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.verdict {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.verdict-true {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+}
+
+.verdict-false {
+  background: rgba(186, 26, 26, 0.1);
+  color: #ba1a1a;
+}
+
+.score {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.score strong {
+  color: var(--primary);
+}
+
+.analysis-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--button-bg);
+  color: var(--primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.analysis-button:hover {
+  background: var(--surface-high);
+}
+
+.analysis-button svg {
+  transition: transform 0.2s ease;
+}
+
+.open-error {
+  margin: -2px 0 0;
+  color: #ba1a1a;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.empty-state {
+  margin: 0;
+  padding: 18px 13px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  text-align: center;
 }

@@ -53,9 +53,21 @@ export default defineContentScript({
 
       // Send the selected text to the background script for fact-checking
       browser.runtime.sendMessage({ type: 'CHECK_TEXT', payload: text, targetLanguage })
-        .then((response) => {
+        .then(async (response) => {
           // Render the panel with the result if the response is successful
           if (response.success) {
+            // Save the last fact-check result to local storage
+            try {
+              await storage.setItem('local:lastFactCheck', {
+                claim: text,
+                result: response.result,
+                language: targetLanguage,
+                pageUrl: window.location.href,
+                checkedAt: new Date().toISOString(),
+              });
+            } catch (error) {
+              console.warn('[ScholarLens] Failed to save the last fact-check:', error);
+            }
             renderPanel(text, response.result, targetLanguage);
           } else {
             renderPanel(text, {
@@ -150,6 +162,23 @@ export default defineContentScript({
         <ResultsPanel selectedText={selectedText} result={resultToRender} currentLanguage={lang} onLanguageChange={handleLanguageChange} onClose={removePanel} />
       );
     };
+
+    browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+      if (message.type !== 'OPEN_CACHED_FACT_CHECK') {
+        return false;
+      }
+
+      const { claim, result, language } = message.payload || {};
+      if (typeof claim !== 'string' || !result) {
+        sendResponse({ success: false, error: 'Cached fact-check data is invalid.' });
+        return false;
+      }
+
+      removeButton();
+      renderPanel(claim, result, typeof language === 'string' ? language : 'English');
+      sendResponse({ success: true });
+      return false;
+    });
 
     // Event listeners to handle text selection and button removal
     document.addEventListener('mouseup', () => {
