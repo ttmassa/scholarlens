@@ -164,6 +164,21 @@ export default defineContentScript({
     };
 
     browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+      if (message.type === 'START_FACT_CHECK') {
+        const claim = typeof message.payload === 'string' ? message.payload.trim() : '';
+
+        if (!claim) {
+          sendResponse({ success: false, error: 'Enter a claim to check.' });
+          return false;
+        }
+
+        removeButton();
+        removePanel();
+        void runFactCheck(claim);
+        sendResponse({ success: true });
+        return false;
+      }
+
       if (message.type !== 'OPEN_CACHED_FACT_CHECK') {
         return false;
       }

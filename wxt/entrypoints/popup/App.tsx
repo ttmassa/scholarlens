@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { ExternalLink, Search, Settings } from 'lucide-react'
 import type { FactCheckResult } from '@/components/ResultsPanel/ResultsPanel'
 import { storage } from 'wxt/utils/storage'
@@ -15,6 +15,9 @@ interface LastFactCheck {
 export default function App() {
   const [lastCheck, setLastCheck] = useState<LastFactCheck | null>(null)
   const [openError, setOpenError] = useState<string | null>(null)
+  const [claimInput, setClaimInput] = useState('')
+  const [searchError, setSearchError] = useState<string | null>(null)
+  const [isSearching, setIsSearching] = useState(false)
   const url = window.location.href
 
   useEffect(() => {
@@ -62,6 +65,41 @@ export default function App() {
     }
   }
 
+  const searchClaim = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const claim = claimInput.trim()
+
+    if (!claim) {
+      setSearchError('Enter a claim to check.')
+      return
+    }
+
+    setSearchError(null)
+    setIsSearching(true)
+
+    try {
+      const [activeTab] = await browser.tabs.query({ active: true, currentWindow: true })
+      if (!activeTab.id) {
+        throw new Error('No active tab is available.')
+      }
+
+      const response = await browser.tabs.sendMessage(activeTab.id, {
+        type: 'START_FACT_CHECK',
+        payload: claim,
+      })
+
+      if (!response?.success) {
+        throw new Error(response?.error || 'The result panel could not be opened.')
+      }
+
+      window.close()
+    } catch (error) {
+      console.warn('[ScholarLens] Failed to start fact-check:', error)
+      setSearchError('Open the extension on a regular webpage to check a claim.')
+      setIsSearching(false)
+    }
+  }
+
   return (
     <div className='popup'>
       <header className='popup-header'>
@@ -89,12 +127,31 @@ export default function App() {
       <main className="popup-main">
         <section className="search-container" aria-labelledby="search-title">
           <h3 id="search-title" className='search-title'>Fact-check claim</h3>
-          <div className="search-bar">
-            <input className='search-input' type="text" placeholder='Paste sentence, statement, or claim...'/>
-            <button className="icon-btn search-button" aria-label="Check claim">
+          <form className="search-bar" onSubmit={searchClaim}>
+            <input
+              className='search-input'
+              type="text"
+              value={claimInput}
+              onChange={(event) => {
+                setClaimInput(event.target.value)
+                if (searchError) {
+                  setSearchError(null)
+                }
+              }}
+              placeholder='Paste sentence, statement, or claim...'
+              aria-label="Claim to fact-check"
+              disabled={isSearching}
+            />
+            <button
+              className="icon-btn search-button"
+              type="submit"
+              aria-label="Check claim"
+              disabled={isSearching || !claimInput.trim()}
+            >
               <Search size={15} />
             </button>
-          </div>
+          </form>
+          {searchError && <p className="open-error" role="alert">{searchError}</p>}
         </section>
 
         <section className="history-container" aria-labelledby="history-title">

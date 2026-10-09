@@ -170,6 +170,11 @@ img {
   background: #5d0007;
 }
 
+.search-button:disabled {
+  background: #c9aaa7;
+  cursor: not-allowed;
+}
+
 .popup-main {
   display: flex;
   flex-direction: column;
